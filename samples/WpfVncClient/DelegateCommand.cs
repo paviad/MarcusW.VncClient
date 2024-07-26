@@ -4,17 +4,11 @@ using System.Windows.Input;
 
 namespace WpfVncClient;
 
-public class DelegateCommand : ICommand
+public class DelegateCommand(Func<object?, Task> execute, Func<object?, Task<bool>> canExecute = null!) : ICommand
 {
-    private static readonly Func<object?, Task<bool>> DefaultCanExecute = o => Task.FromResult(true);
-    private readonly Func<object?, Task<bool>> _canExecute;
-    private readonly Func<object?, Task> _execute;
-
-    public DelegateCommand(Func<object?, Task> execute, Func<object?, Task<bool>> canExecute = null!)
-    {
-        _canExecute = canExecute ?? DefaultCanExecute;
-        _execute = execute;
-    }
+    private static readonly Func<object?, Task<bool>> DefaultCanExecute = _ => Task.FromResult(true);
+    private readonly Func<object?, Task<bool>> _canExecute = canExecute ?? DefaultCanExecute;
+    private readonly Func<object?, Task> _execute = execute;
 
     public bool CanExecute(object? parameter)
     {

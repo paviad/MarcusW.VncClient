@@ -8,6 +8,7 @@ namespace WpfVncClient;
 public class BooleanVisibilityConverterInvertable : IValueConverter
 {
     public bool IsInverted { get; set; }
+
     /// <summary>
     ///     Convert bool or Nullable&lt;bool&gt; to Visibility
     /// </summary>
@@ -16,20 +17,15 @@ public class BooleanVisibilityConverterInvertable : IValueConverter
     /// <param name="parameter">null</param>
     /// <param name="culture">null</param>
     /// <returns>Visible or Collapsed</returns>
-    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        var bValue = false;
-        if (value is bool b)
-        {
-            bValue = b;
-        }
-        else if (value is bool?)
-        {
-            var tmp = (bool?)value;
-            bValue = tmp.HasValue ? tmp.Value : false;
-        }
+        bool bValue = value switch {
+            bool b => b,
+            null   => false,
+            var _  => true,
+        };
 
-        return (bValue ^ IsInverted) ? Visibility.Visible : Visibility.Collapsed;
+        return bValue ^ IsInverted ? Visibility.Visible : Visibility.Collapsed;
     }
 
     /// <summary>
@@ -40,11 +36,11 @@ public class BooleanVisibilityConverterInvertable : IValueConverter
     /// <param name="parameter"></param>
     /// <param name="culture"></param>
     /// <returns></returns>
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
-        if (value is Visibility)
+        if (value is Visibility visibility)
         {
-            return ((Visibility)value == Visibility.Visible) ^ IsInverted;
+            return (visibility == Visibility.Visible) ^ IsInverted;
         }
 
         return IsInverted;

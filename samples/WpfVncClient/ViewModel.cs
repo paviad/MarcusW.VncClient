@@ -4,16 +4,17 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using MarcusW.VncClient;
 using MarcusW.VncClient.Protocol.Implementation;
 using MarcusW.VncClient.Protocol.Implementation.Services.Transports;
 using Microsoft.Extensions.Logging;
-using WpfVncClient.Annotations;
 using WpfVncClient.Logging;
 using WpfVncClient.Services;
 
 namespace WpfVncClient;
 
+[PublicAPI]
 public class ViewModel : INotifyPropertyChanged
 {
     private readonly ConnectionManager _connectionManager;
@@ -23,7 +24,7 @@ public class ViewModel : INotifyPropertyChanged
     private bool _autoResize;
     private string? _errorMessage;
     private string _host = "localhost";
-    private string _password;
+    private string? _password;
     private int _port = 5900;
     private RfbConnection? _rfbConnection;
 
@@ -32,7 +33,7 @@ public class ViewModel : INotifyPropertyChanged
         _connectionManager = connectionManager;
         _logger = logger;
         _reactiveLog = reactiveLog;
-        ConnectCommand = new DelegateCommand(o => ConnectAsync());
+        ConnectCommand = new(_ => ConnectAsync());
         _sync = SynchronizationContext.Current;
         reactiveLog.Subject.Subscribe(AddLog);
     }
@@ -54,7 +55,7 @@ public class ViewModel : INotifyPropertyChanged
         }
     }
 
-    public ObservableCollection<string> LogList { get; set; } = new();
+    public ObservableCollection<string> LogList { get; set; } = [];
 
     public RfbConnection? RfbConnection
     {
@@ -101,7 +102,7 @@ public class ViewModel : INotifyPropertyChanged
         }
     }
 
-    public string Password
+    public string? Password
     {
         get => _password;
         set
@@ -131,19 +132,22 @@ public class ViewModel : INotifyPropertyChanged
         }
     }
 
+#pragma warning disable CA1822
+
+    // ReSharper disable once MemberCanBeMadeStatic.Global
     public bool IsTightAvailable => DefaultImplementation.IsTightAvailable;
+#pragma warning restore CA1822
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    [NotifyPropertyChangedInvocator]
     protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        PropertyChanged?.Invoke(this, new(propertyName));
     }
 
     private void AddLog(string s)
     {
-        _sync?.Post(o => {
+        _sync?.Post(_ => {
             LogList.Insert(0, s);
         }, null);
     }

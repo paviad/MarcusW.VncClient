@@ -5,7 +5,9 @@ namespace WpfVncClient;
 /// <summary>
 ///     Interaction logic for MainWindow.xaml
 /// </summary>
-public partial class MainWindow
+
+// ReSharper disable once RedundantExtendsListEntry
+public partial class MainWindow : Window
 {
     private bool _fullscreen;
     private WindowState _state;
@@ -18,7 +20,7 @@ public partial class MainWindow
         DataContext = viewModel;
     }
 
-    private void Fullscreen_Click(object sender, RoutedEventArgs e)
+    private void Fullscreen_Click(object? sender, RoutedEventArgs e)
     {
         if (!_fullscreen)
         {

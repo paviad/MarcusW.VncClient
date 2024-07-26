@@ -14,7 +14,7 @@ public static class KeyMapping
     /// <returns>The X key symbol.</returns>
     public static KeySymbol GetSymbolFromChar(char c)
     {
-        if (c >= ' ' && c <= '~')
+        if (c is >= ' ' and <= '~')
         {
             return KeySymbol.space + (c - ' ');
         }

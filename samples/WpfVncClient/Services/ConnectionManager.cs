@@ -5,21 +5,14 @@ using Microsoft.Extensions.Logging;
 
 namespace WpfVncClient.Services;
 
-public class ConnectionManager
+public class ConnectionManager(ILoggerFactory loggerFactory)
 {
-    private readonly VncClient _vncClient;
-
-    public ConnectionManager(ILoggerFactory loggerFactory)
-    {
-        // Create and populate default logger factory for logging to Avalonia logging sinks
-        _vncClient = new VncClient(loggerFactory);
-    }
+    private readonly VncClient _vncClient = new(loggerFactory);
 
     public Task<RfbConnection> ConnectAsync(ConnectParameters parameters, CancellationToken cancellationToken = default)
-    {
-        // Uncomment for debugging/visualization purposes
-        //parameters.RenderFlags |= RenderFlags.VisualizeRectangles;
+        =>
 
-        return _vncClient.ConnectAsync(parameters, cancellationToken);
-    }
+            // Uncomment for debugging/visualization purposes
+            //parameters.RenderFlags |= RenderFlags.VisualizeRectangles;
+            _vncClient.ConnectAsync(parameters, cancellationToken);
 }

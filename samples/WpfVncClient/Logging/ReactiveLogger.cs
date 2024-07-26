@@ -3,16 +3,10 @@ using Microsoft.Extensions.Logging;
 
 namespace WpfVncClient.Logging;
 
-public class ReactiveLogger : ILogger
+public class ReactiveLogger(string name, ReactiveLog reactiveLog) : ILogger
 {
-    private readonly string _name;
-    private readonly ReactiveLog _reactiveLog;
-
-    public ReactiveLogger(string name, ReactiveLog reactiveLog)
-    {
-        _name = name;
-        _reactiveLog = reactiveLog;
-    }
+    private readonly string _name = name;
+    private readonly ReactiveLog _reactiveLog = reactiveLog;
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
         Func<TState, Exception?, string> formatter)
@@ -23,12 +17,12 @@ public class ReactiveLogger : ILogger
         }
 
         var timestamp = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
-        string msg = $"[{eventId.Id,2}: {logLevel,-12}, {timestamp}]: {_name} - {formatter(state, exception)}";
+        var msg = $"[{eventId.Id,2}: {logLevel,-12}, {timestamp}]: {_name} - {formatter(state, exception)}";
 
         _reactiveLog.Log(msg);
     }
 
     public bool IsEnabled(LogLevel logLevel) => true;
 
-    public IDisposable BeginScope<TState>(TState state) => throw new NotImplementedException();
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull => throw new NotImplementedException();
 }

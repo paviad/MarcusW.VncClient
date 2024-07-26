@@ -35,23 +35,22 @@ namespace MarcusW.VncClient.Wpf;
 ///     "Add Reference"->"Projects"->[Select this project]
 ///     Step 2)
 ///     Go ahead and use your control in the XAML file.
-///     <MyNamespace:CustomControl1 />
+///     &lt;MyNamespace:CustomControl1 /&gt;
 /// </summary>
 public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
 {
     public const double Dpi = 96;
     private static double _scaling = 1;
 
-    public static readonly DependencyProperty RfbConnectionProperty = DependencyProperty.Register("RfbConnection",
+    public static readonly DependencyProperty RfbConnectionProperty = DependencyProperty.Register(nameof(RfbConnection),
         typeof(RfbConnection), typeof(VncView),
-        new PropertyMetadata(default(RfbConnection)) { PropertyChangedCallback = OnRfbConnectionPropertyChanged });
+        new(default(RfbConnection)) { PropertyChangedCallback = OnRfbConnectionPropertyChanged });
 
-    public static readonly DependencyProperty AutoResizeProperty = DependencyProperty.Register("AutoResize",
-        typeof(bool), typeof(VncView),
-        new PropertyMetadata(default(bool)) { PropertyChangedCallback = OnAutoResizePropertyChanged });
+    public static readonly DependencyProperty AutoResizeProperty = DependencyProperty.Register(nameof(AutoResize),
+        typeof(bool), typeof(VncView), new(default(bool)) { PropertyChangedCallback = OnAutoResizePropertyChanged });
 
     private readonly object _bitmapReplacementLock = new();
-    private readonly HashSet<KeySymbol> _pressedKeys = new();
+    private readonly HashSet<KeySymbol> _pressedKeys = [];
 
     private readonly Subject<SystemSize> _resizeEvents = new();
     private readonly SynchronizationContext? _sync;
@@ -101,7 +100,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
 
     public void HandleServerClipboardUpdate(string text)
     {
-        _sync?.Post(o => {
+        _sync?.Post(_ => {
             // Copy the text to the local clipboard
             Clipboard.SetText(text);
         }, null);
@@ -109,10 +108,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
 
     public IFramebufferReference GrabFramebufferReference(Size size, IImmutableSet<Screen> layout)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(VncView));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, nameof(VncView));
 
         bool sizeChanged = _bitmap is null || _height != size.Height || _width != size.Width;
         if (sizeChanged)
@@ -239,10 +235,10 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
                 Buffer.MemoryCopy((void*)_bb, (void*)bitmap.BackBuffer, _bbSize, _bbSize);
             }
 
-            bitmap.AddDirtyRect(new Int32Rect(0, 0, _width, _height));
+            bitmap.AddDirtyRect(new(0, 0, _width, _height));
 
             bitmap.Unlock();
-            drawingContext.DrawImage(bitmap, new Rect(0, 0, _width / _scaling, _height / _scaling));
+            drawingContext.DrawImage(bitmap, new(0, 0, _width / _scaling, _height / _scaling));
         }
     }
 
@@ -289,17 +285,17 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
         var buttonsMask = MouseButtons.None;
         if (e.LeftButton == MouseButtonState.Pressed)
         {
-            buttonsMask = buttonsMask | MouseButtons.Left;
+            buttonsMask |= MouseButtons.Left;
         }
 
         if (e.MiddleButton == MouseButtonState.Pressed)
         {
-            buttonsMask = buttonsMask | MouseButtons.Middle;
+            buttonsMask |= MouseButtons.Middle;
         }
 
         if (e.RightButton == MouseButtonState.Pressed)
         {
-            buttonsMask = buttonsMask | MouseButtons.Right;
+            buttonsMask |= MouseButtons.Right;
         }
 
         return buttonsMask;
@@ -429,7 +425,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
 
     private void OnResizeEventThrottled(SystemSize obj)
     {
-        _sync?.Post(o => {
+        _sync?.Post(_ => {
             CompositionTarget? source = PresentationSource.FromVisual(this)?.CompositionTarget;
             if (source is not null)
             {
@@ -437,7 +433,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
                 _scaling = m.M11; // x axis
             }
         }, null);
-        SendSetDesktopSize(new VncSize((int)obj.Width, (int)obj.Height));
+        SendSetDesktopSize(new((int)obj.Width, (int)obj.Height));
     }
 
     private void OnRfbConnectionChanged(RfbConnection? oldValue, RfbConnection? newValue)
@@ -463,7 +459,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
     {
         if (e.PropertyName == nameof(MarcusW.VncClient.RfbConnection.DesktopIsResizable))
         {
-            _sync?.Post(o => {
+            _sync?.Post(_ => {
                 UpdateSize();
             }, null);
         }
@@ -471,7 +467,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
 
     private void RenderDone()
     {
-        _sync?.Post(o => {
+        _sync?.Post(_ => {
             InvalidateMeasure();
             InvalidateVisual();
             if (!_autoResize)
@@ -515,7 +511,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
             return;
         }
 
-        connection.EnqueueMessage(new SetDesktopSizeMessage((currentSize, currentLayout) => {
+        connection.EnqueueMessage(new SetDesktopSizeMessage((_, currentLayout) => {
             var newSize = new VncSize((int)(size.Width * _scaling), (int)(size.Height * _scaling));
             var newRectangle = new Rectangle(Position.Origin, newSize);
 
@@ -523,13 +519,13 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
             if (!currentLayout.Any())
             {
                 // Create a new layout with one screen
-                newScreen = new Screen(1, newRectangle, 0);
+                newScreen = new(1, newRectangle, 0);
             }
             else
             {
                 // If there is more than one screen, only use one because multi-monitor is not supported
                 Screen firstScreen = currentLayout.First();
-                newScreen = new Screen(firstScreen.Id, newRectangle, firstScreen.Flags);
+                newScreen = new(firstScreen.Id, newRectangle, firstScreen.Flags);
             }
 
             return (newSize, new[] { newScreen }.ToImmutableHashSet());
@@ -543,6 +539,6 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
             return;
         }
 
-        SendSetDesktopSize(new VncSize((int)ActualWidth, (int)ActualHeight));
+        SendSetDesktopSize(new((int)ActualWidth, (int)ActualHeight));
     }
 }

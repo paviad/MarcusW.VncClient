@@ -1,8 +1,10 @@
 using System;
+using JetBrains.Annotations;
 
 namespace MarcusW.VncClient.Wpf;
 
 [Flags]
+[PublicAPI]
 internal enum KeyModifiers
 {
     None = 0,

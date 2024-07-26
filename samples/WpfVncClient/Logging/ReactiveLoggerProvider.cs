@@ -3,18 +3,13 @@ using Microsoft.Extensions.Logging;
 
 namespace WpfVncClient.Logging;
 
-public class ReactiveLoggerProvider : ILoggerProvider
+public class ReactiveLoggerProvider(ReactiveLog reactiveLog) : ILoggerProvider
 {
     private readonly ConcurrentDictionary<string, ReactiveLogger> _loggers = new();
-    private readonly ReactiveLog _reactiveLog;
-
-    public ReactiveLoggerProvider(ReactiveLog reactiveLog)
-    {
-        _reactiveLog = reactiveLog;
-    }
+    private readonly ReactiveLog _reactiveLog = reactiveLog;
 
     public ILogger CreateLogger(string categoryName)
-        => _loggers.GetOrAdd(categoryName, name => new ReactiveLogger(name, _reactiveLog));
+        => _loggers.GetOrAdd(categoryName, name => new(name, _reactiveLog));
 
     public void Dispose()
     {
