@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using MarcusW.VncClient.Protocol.Implementation.MessageTypes.Outgoing;
 using MarcusW.VncClient.Protocol.MessageTypes;
@@ -20,7 +20,7 @@ public class RfbMessageSender : BackgroundThread, IRfbMessageSender
     private readonly RfbConnectionContext _context;
     private readonly ILogger<RfbMessageSender> _logger;
 
-    private readonly BlockingCollection<QueueItem> _queue = new(new ConcurrentQueue<QueueItem>());
+    private readonly Channel<QueueItem> _queue = Channel.CreateUnbounded<QueueItem>();
 
     private readonly ProtocolState _state;
 
@@ -30,7 +30,7 @@ public class RfbMessageSender : BackgroundThread, IRfbMessageSender
     ///     Initializes a new instance of the <see cref="RfbMessageSender" />.
     /// </summary>
     /// <param name="context">The connection context.</param>
-    public RfbMessageSender(RfbConnectionContext context) : base("RFB Message Sender")
+    public RfbMessageSender(RfbConnectionContext context)
     {
         _context = context;
         _state = context.GetState<ProtocolState>();
@@ -79,7 +79,7 @@ public class RfbMessageSender : BackgroundThread, IRfbMessageSender
         var messageType = GetAndCheckMessageType<TMessageType>();
 
         // Add message to queue
-        _queue.Add(new(message, messageType), cancellationToken);
+        _queue.Writer.TryWrite(new QueueItem(message, messageType));
     }
 
     /// <inheritdoc />
@@ -104,7 +104,7 @@ public class RfbMessageSender : BackgroundThread, IRfbMessageSender
         TaskCompletionSource<object?> completionSource = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         // Add message to queue
-        _queue.Add(new(message, messageType, completionSource), cancellationToken);
+        _queue.Writer.TryWrite(new QueueItem(message, messageType, completionSource));
 
         return completionSource.Task;
     }
@@ -120,7 +120,7 @@ public class RfbMessageSender : BackgroundThread, IRfbMessageSender
         if (disposing)
         {
             SetQueueCancelled();
-            _queue.Dispose();
+            _queue.Writer.TryComplete();
         }
 
         _disposed = true;
@@ -130,7 +130,7 @@ public class RfbMessageSender : BackgroundThread, IRfbMessageSender
 
     // This method will not catch exceptions so the BackgroundThread base class will receive them,
     // raise a "Failure" and trigger a reconnect.
-    protected override void ThreadWorker(CancellationToken cancellationToken)
+    protected override async Task ThreadWorker(CancellationToken cancellationToken)
     {
         try
         {
@@ -138,8 +138,9 @@ public class RfbMessageSender : BackgroundThread, IRfbMessageSender
             ITransport transport = _context.Transport;
 
             // Iterate over all queued items (will block if the queue is empty)
-            foreach (QueueItem queueItem in _queue.GetConsumingEnumerable(cancellationToken))
+            while (await _queue.Reader.WaitToReadAsync(cancellationToken).ConfigureAwait(false))
             {
+                QueueItem queueItem = await _queue.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
                 IOutgoingMessage<IOutgoingMessageType> message = queueItem.Message;
                 IOutgoingMessageType messageType = queueItem.MessageType;
 
@@ -192,8 +193,7 @@ public class RfbMessageSender : BackgroundThread, IRfbMessageSender
 
     private void SetQueueCancelled()
     {
-        _queue.CompleteAdding();
-        foreach (QueueItem queueItem in _queue)
+        while (_queue.Reader.TryRead(out QueueItem? queueItem))
             queueItem.CompletionSource?.TrySetCanceled();
     }
 

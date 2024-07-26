@@ -25,7 +25,7 @@ public sealed class RfbMessageReceiver : BackgroundThread, IRfbMessageReceiver
     ///     Initializes a new instance of the <see cref="RfbMessageReceiver" />.
     /// </summary>
     /// <param name="context">The connection context.</param>
-    public RfbMessageReceiver(RfbConnectionContext context) : base("RFB Message Receiver")
+    public RfbMessageReceiver(RfbConnectionContext context)
     {
         _context = context;
         _state = context.GetState<ProtocolState>();
@@ -51,7 +51,7 @@ public sealed class RfbMessageReceiver : BackgroundThread, IRfbMessageReceiver
 
     // This method will not catch exceptions so the BackgroundThread base class will receive them,
     // raise a "Failure" and trigger a reconnect.
-    protected override void ThreadWorker(CancellationToken cancellationToken)
+    protected override async Task ThreadWorker(CancellationToken cancellationToken)
     {
         // Get the transport stream so we don't have to call the getter every time
         Debug.Assert(_context.Transport != null, "_context.Transport != null");
@@ -62,12 +62,12 @@ public sealed class RfbMessageReceiver : BackgroundThread, IRfbMessageReceiver
         ImmutableDictionary<byte, IIncomingMessageType> incomingMessageLookup = _context.SupportedMessageTypes
             .OfType<IIncomingMessageType>().ToImmutableDictionary(mt => mt.Id);
 
-        Span<byte> messageTypeBuffer = stackalloc byte[1];
+        var messageTypeBuffer = new byte[1];
 
         while (!cancellationToken.IsCancellationRequested)
         {
             // Read message type
-            if (transportStream.Read(messageTypeBuffer) == 0)
+            if (await transportStream.ReadAsync(messageTypeBuffer.AsMemory(), cancellationToken) == 0)
             {
                 throw new UnexpectedEndOfStreamException("Stream reached its end while reading next message type.");
             }

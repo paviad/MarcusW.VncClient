@@ -56,16 +56,16 @@ public class BackgroundThreadTests
         mock.Protected().Verify("ThreadWorker", Times.Exactly(1), ItExpr.IsAny<CancellationToken>());
     }
 
-    private class CancellableThread() : BackgroundThread("Cancellable Thread")
+    private class CancellableThread : BackgroundThread
     {
         public new void Start() => base.Start();
 
         public new Task StopAndWaitAsync() => base.StopAndWaitAsync();
 
-        protected override void ThreadWorker(CancellationToken cancellationToken)
+        protected override async Task ThreadWorker(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
-                Thread.Sleep(10);
+                await Task.Delay(10);
         }
     }
 }
