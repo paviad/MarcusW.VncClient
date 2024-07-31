@@ -24,7 +24,6 @@ public class ViewModel : INotifyPropertyChanged
     private bool _autoResize;
     private string? _errorMessage;
     private string _host = "localhost";
-    private string? _password;
     private int _port = 5900;
     private RfbConnection? _rfbConnection;
 
@@ -102,21 +101,6 @@ public class ViewModel : INotifyPropertyChanged
         }
     }
 
-    public string? Password
-    {
-        get => _password;
-        set
-        {
-            if (value == _password)
-            {
-                return;
-            }
-
-            _password = value;
-            OnPropertyChanged();
-        }
-    }
-
     public int Port
     {
         get => _port;
@@ -157,9 +141,7 @@ public class ViewModel : INotifyPropertyChanged
         try
         {
             // TODO: Configure connect parameters
-            var authenticationHandler = new AuthenticationHandler {
-                Password = Password,
-            };
+            var authenticationHandler = new InteractiveAuthenticationHandler(SynchronizationContext.Current);
 
             var parameters = new ConnectParameters {
                 TransportParameters = new TcpTransportParameters {

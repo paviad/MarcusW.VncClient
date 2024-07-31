@@ -10,6 +10,7 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="650" Width="1000" d:DataContext="{d:DesignInstance wpfVncClient:ViewModel}">
     <Window.Resources>
+        <wpfVncClient:BooleanVisibilityConverterInvertable x:Key="BoolToVis" IsInverted="False" />
         <wpfVncClient:BooleanVisibilityConverterInvertable x:Key="BoolToVisInv" IsInverted="True" />
         <wpfVncClient:BooleanToScrollbarVisibilityConverter x:Key="BoolToBarVis" />
     </Window.Resources>
@@ -20,6 +21,7 @@
                 <ColumnDefinition />
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
+                <RowDefinition />
                 <RowDefinition />
                 <RowDefinition />
             </Grid.RowDefinitions>
@@ -33,6 +35,9 @@
             </StackPanel>
             <Button x:Name="Connect" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Content="Connect"
                     Command="{Binding ConnectCommand}" />
+            <TextBlock Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Text="{Binding ErrorMessage}"
+                       Visibility="{Binding ErrorMessage, Converter={StaticResource BoolToVis}}"
+                       Foreground="Red" />
         </Grid>
         <UniformGrid DockPanel.Dock="Bottom" Rows="1">
             <Border Name="BottomDockPanel" DockPanel.Dock="Bottom" BorderBrush="LightGray" BorderThickness="0,1,0,0">
