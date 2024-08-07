@@ -10,7 +10,7 @@ public partial class VncView
     protected override void OnPointerMoved(PointerEventArgs e)
     {
         base.OnPointerMoved(e);
-        if (e.Handled)
+        if (ViewOnly || e.Handled)
         {
             return;
         }
@@ -26,7 +26,7 @@ public partial class VncView
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
-        if (e.Handled)
+        if (ViewOnly || e.Handled)
         {
             return;
         }
@@ -42,7 +42,7 @@ public partial class VncView
     protected override void OnPointerReleased(PointerReleasedEventArgs e)
     {
         base.OnPointerReleased(e);
-        if (e.Handled)
+        if (ViewOnly || e.Handled)
         {
             return;
         }
@@ -58,7 +58,7 @@ public partial class VncView
     protected override void OnPointerWheelChanged(PointerWheelEventArgs e)
     {
         base.OnPointerWheelChanged(e);
-        if (e.Handled)
+        if (ViewOnly || e.Handled)
         {
             return;
         }

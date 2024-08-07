@@ -49,6 +49,9 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
     public static readonly DependencyProperty AutoResizeProperty = DependencyProperty.Register(nameof(AutoResize),
         typeof(bool), typeof(VncView), new(default(bool)) { PropertyChangedCallback = OnAutoResizePropertyChanged });
 
+    public static readonly DependencyProperty ViewOnlyProperty = DependencyProperty.Register(nameof(ViewOnly),
+        typeof(bool), typeof(VncView), new(default(bool)));
+
     private readonly object _bitmapReplacementLock = new();
     private readonly HashSet<KeySymbol> _pressedKeys = [];
 
@@ -82,6 +85,12 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
     {
         get => (bool)GetValue(AutoResizeProperty);
         set => SetValue(AutoResizeProperty, value);
+    }
+
+    public bool ViewOnly
+    {
+        get => (bool)GetValue(ViewOnlyProperty);
+        set => SetValue(ViewOnlyProperty, value);
     }
 
     public RfbConnection? RfbConnection
@@ -134,7 +143,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
-        if (e.Handled || e.Key == Key.None)
+        if (ViewOnly || e.Handled || e.Key == Key.None)
         {
             return;
         }
@@ -153,7 +162,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
     protected override void OnKeyUp(KeyEventArgs e)
     {
         base.OnKeyUp(e);
-        if (e.Handled || e.Key == Key.None)
+        if (ViewOnly || e.Handled || e.Key == Key.None)
         {
             return;
         }
@@ -251,7 +260,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
     protected override void OnTextInput(TextCompositionEventArgs e)
     {
         base.OnTextInput(e);
-        if (e.Handled)
+        if (ViewOnly || e.Handled)
         {
             return;
         }
@@ -352,7 +361,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
     {
         // Get connection
         RfbConnection? connection = _rfbConnection;
-        if (connection == null)
+        if (ViewOnly || connection == null)
         {
             return false;
         }
@@ -386,7 +395,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
     private bool HandlePointerEvent(Point pointerPoint, int wheelDelta, MouseButtons buttonsMask)
     {
         RfbConnection? connection = _rfbConnection;
-        if (connection == null)
+        if (ViewOnly || connection == null)
         {
             return false;
         }
@@ -482,7 +491,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
     {
         // (Still) conneced?
         RfbConnection? connection = _rfbConnection;
-        if (connection != null)
+        if (!ViewOnly && connection != null)
         {
             // Clear pressed keys
             foreach (KeySymbol keySymbol in _pressedKeys)
@@ -501,7 +510,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
     private void SendSetDesktopSize(VncSize size)
     {
         RfbConnection? connection = _rfbConnection;
-        if (connection == null)
+        if (ViewOnly || connection == null)
         {
             return;
         }
@@ -534,7 +543,7 @@ public class VncView : Control, IRenderTarget, IOutputHandler, IDisposable
 
     private void UpdateSize()
     {
-        if (_rfbConnection == null)
+        if (ViewOnly || _rfbConnection == null)
         {
             return;
         }

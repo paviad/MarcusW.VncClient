@@ -13,7 +13,7 @@ public partial class VncView
     protected override void OnKeyDown(KeyEventArgs e)
     {
         base.OnKeyDown(e);
-        if (e.Handled || e.Key == Key.None)
+        if (ViewOnly || e.Handled || e.Key == Key.None)
         {
             return;
         }
@@ -31,7 +31,7 @@ public partial class VncView
     protected override void OnKeyUp(KeyEventArgs e)
     {
         base.OnKeyUp(e);
-        if (e.Handled || e.Key == Key.None)
+        if (ViewOnly || e.Handled || e.Key == Key.None)
         {
             return;
         }
@@ -51,6 +51,12 @@ public partial class VncView
     protected override void OnLostFocus(RoutedEventArgs e)
     {
         base.OnLostFocus(e);
+
+        if (ViewOnly)
+        {
+            return;
+        }
+
         ResetKeyPresses();
     }
 
@@ -58,7 +64,7 @@ public partial class VncView
     protected override void OnTextInput(TextInputEventArgs e)
     {
         base.OnTextInput(e);
-        if (e.Handled)
+        if (ViewOnly || e.Handled)
         {
             return;
         }

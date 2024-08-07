@@ -21,10 +21,17 @@ public partial class VncView : RfbRenderTarget, IOutputHandler
         AvaloniaProperty.RegisterDirect<VncView, RfbConnection?>(nameof(Connection), o => o.Connection,
             (o, v) => o.Connection = v);
 
+    /// <summary>
+    ///     Defines the <see cref="ViewOnly" /> property.
+    /// </summary>
+    public static readonly DirectProperty<VncView, bool> ViewOnlyProperty =
+        AvaloniaProperty.RegisterDirect<VncView, bool>(nameof(ViewOnly), o => o.ViewOnly, (o, v) => o.ViewOnly = v);
+
     private RfbConnection? _connection;
 
     // Disposable for cleaning up after connection detaches
     private CompositeDisposable _connectionDetachDisposable = [];
+    private bool _viewOnly;
 
     /// <summary>
     ///     Initializes static members of the <see cref="VncView" /> class.
@@ -38,6 +45,22 @@ public partial class VncView : RfbRenderTarget, IOutputHandler
     public VncView()
     {
         InitSizing();
+    }
+
+    /// <summary>
+    ///     Gets or sets the view only mode
+    /// </summary>
+    public bool ViewOnly
+    {
+        get => _viewOnly;
+        set
+        {
+            _viewOnly = value;
+            if (_viewOnly)
+            {
+                ResetKeyPresses();
+            }
+        }
     }
 
     /// <summary>
@@ -98,6 +121,11 @@ public partial class VncView : RfbRenderTarget, IOutputHandler
     /// <inheritdoc />
     public virtual void HandleServerClipboardUpdate(string text)
     {
+        if (ViewOnly)
+        {
+            return;
+        }
+
         Dispatcher.UIThread.InvokeAsync(async () => {
             // Copy the text to the local clipboard
             var topLevel = TopLevel.GetTopLevel(this);
