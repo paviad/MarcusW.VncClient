@@ -11,6 +11,8 @@ public partial class RfbConnection
 {
     private volatile RfbConnectionContext? _activeConnection;
 
+    public ulong FrameCount => _activeConnection?.MessageReceiver?.FrameCount ?? 0ul;
+
     private void BackgroundThreadOnFailed(object? sender, BackgroundThreadFailedEventArgs e)
     {
         // Forward to main class part and ensure the event is processed in the thread pool and not in the background thread (that might be killed.)

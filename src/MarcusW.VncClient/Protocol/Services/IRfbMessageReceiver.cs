@@ -17,4 +17,6 @@ public interface IRfbMessageReceiver : IBackgroundThread
     ///     Stops the receive loop and waits for completion.
     /// </summary>
     Task StopReceiveLoopAsync();
+
+    ulong FrameCount { get; }
 }

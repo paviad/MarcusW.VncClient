@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MarcusW.VncClient.Protocol.Implementation.MessageTypes.Incoming;
 using MarcusW.VncClient.Protocol.MessageTypes;
 using MarcusW.VncClient.Protocol.Services;
 using MarcusW.VncClient.Utils;
@@ -20,6 +21,8 @@ public sealed class RfbMessageReceiver : BackgroundThread, IRfbMessageReceiver
     private readonly RfbConnectionContext _context;
     private readonly ILogger<RfbMessageReceiver> _logger;
     private readonly ProtocolState _state;
+
+    public ulong FrameCount { get; set; }
 
     /// <summary>
     ///     Initializes a new instance of the <see cref="RfbMessageReceiver" />.
@@ -92,6 +95,11 @@ public sealed class RfbMessageReceiver : BackgroundThread, IRfbMessageReceiver
 
             // Read the message
             messageType.ReadMessage(transport, cancellationToken);
+
+            if (messageType is FramebufferUpdateMessageType fbu)
+            {
+                FrameCount = fbu.FrameCount;
+            }
         }
     }
 }

@@ -46,6 +46,8 @@ public class FramebufferUpdateMessageType(RfbConnectionContext context) : IIncom
 
     private int? _lastEncodingTypeId;
 
+    private ulong _frameCount = 0;
+
     /// <inheritdoc />
     public byte Id => (byte)WellKnownIncomingMessageType.FramebufferUpdate;
 
@@ -54,6 +56,8 @@ public class FramebufferUpdateMessageType(RfbConnectionContext context) : IIncom
 
     /// <inheritdoc />
     public bool IsStandardMessageType => true;
+
+    public ulong FrameCount => Interlocked.Read(ref _frameCount);
 
     /// <inheritdoc />
     public void ReadMessage(ITransport transport, CancellationToken cancellationToken = default)
@@ -72,6 +76,8 @@ public class FramebufferUpdateMessageType(RfbConnectionContext context) : IIncom
         {
             return;
         }
+
+        Interlocked.Increment(ref _frameCount);
 
         if (_logger.IsEnabled(LogLevel.Debug))
         {
